@@ -1,3 +1,6 @@
+//Practica de IaC Especializacion en Ingenieria de Software
+//Cristian Jhair Mejia Navarro
+
 resource "aws_vpc" "cloud2_vpc_terraform" {
     cidr_block = "30.0.0.0/16"
 
