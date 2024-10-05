@@ -10,8 +10,9 @@ resource "aws_vpc" "cloud2_vpc_terraform" {
 }
 
 resource "aws_subnet" "terraform_subnet1_public" {
-  vpc_id     = aws_vpc.cloud2_vpc_terraform.id
-  cidr_block = "30.0.1.0/24"
+  vpc_id            = aws_vpc.cloud2_vpc_terraform.id
+  cidr_block        = "30.0.1.0/24"
+  availability_zone = "us-east-1a"
 
   tags = {
     Name = "subnet_public1"
@@ -19,8 +20,9 @@ resource "aws_subnet" "terraform_subnet1_public" {
 }
 
 resource "aws_subnet" "terraform_subnet2_public" {
-  vpc_id     = aws_vpc.cloud2_vpc_terraform.id
-  cidr_block = "30.0.2.0/24"
+  vpc_id            = aws_vpc.cloud2_vpc_terraform.id
+  cidr_block        = "30.0.2.0/24"
+  availability_zone = "us-east-1b"
 
   tags = {
     Name = "subnet_public2"
@@ -30,6 +32,7 @@ resource "aws_subnet" "terraform_subnet2_public" {
 resource "aws_subnet" "terraform_subnet1_private" {
   vpc_id     = aws_vpc.cloud2_vpc_terraform.id
   cidr_block = "30.0.3.0/24"
+  availability_zone = "us-east-1e"
 
   tags = {
     Name = "subnet_private1"
@@ -39,6 +42,7 @@ resource "aws_subnet" "terraform_subnet1_private" {
 resource "aws_subnet" "terraform_subnet2_private" {
   vpc_id     = aws_vpc.cloud2_vpc_terraform.id
   cidr_block = "30.0.4.0/24"
+  availability_zone = "us-east-1f"
 
   tags = {
     Name = "subnet_private2"
@@ -91,4 +95,52 @@ resource "aws_route_table_association" "private-a" {
 resource "aws_route_table_association" "private-b" {
   subnet_id      = aws_subnet.terraform_subnet2_private.id
   route_table_id = aws_route_table.private_route_table.id
+}
+
+resource "aws_security_group" "allow_ftp" {
+  name        = "allow-ftp"
+  description = "Allow inbound FTP traffic on port 20"
+  vpc_id      = aws_vpc.cloud2_vpc_terraform.id
+
+  ingress {
+    from_port   = 20
+    to_port     = 20
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"  
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "allow-ftp"
+  }
+}
+
+resource "aws_instance" "instance_1" {
+  ami                    = "ami-0fff1b9a61dec8a5f"
+  instance_type          = "t2.micro"
+  vpc_security_group_ids = [aws_security_group.allow_ftp.id]
+  subnet_id              = aws_subnet.terraform_subnet1_public.id
+  key_name               = "cloud2"
+
+  tags = {
+    Name = "instance_1"
+  }
+}
+
+resource "aws_instance" "instance_2" {
+  ami                    = "ami-0fff1b9a61dec8a5f"
+  instance_type          = "t2.micro"
+  vpc_security_group_ids = [aws_security_group.allow_ftp.id]
+  subnet_id              = aws_subnet.terraform_subnet2_public.id
+  key_name               = "cloud2"
+
+  tags = {
+    Name = "instance_2"
+  }
 }
